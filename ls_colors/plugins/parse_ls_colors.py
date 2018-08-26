@@ -13,8 +13,6 @@ ls_colors_keys = [k.split('*.')[1] for k in ls_colors_keys if '*.' in k]
 for key in ls_colors_keys:
     ranger.gui.context.CONTEXT_KEYS.append(key)
     setattr(ranger.gui.context.Context, key, False)
-    # code = 'ranger.gui.context.Context.' + key + ' = False'
-    # exec(code)
 
 OLD_HOOK_BEFORE_DRAWING = ranger.gui.widgets.browsercolumn.hook_before_drawing
 
