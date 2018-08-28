@@ -125,7 +125,7 @@ class base(ColorScheme):
         # http://www.bigsoft.co.uk/blog/2008/04/11/configuring-ls_colors
         for key, t_attributes in self.tup_ls_colors:
             if getattr(context, key):
-                if key == 'executable' and context.directory:
+                if key == 'executable' and (context.directory or context.link):
                     continue
                 t_attributes = t_attributes.split(';')
                 colour256_fg = self.get_256_foreground_color_if_exists(
