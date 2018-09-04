@@ -4,23 +4,6 @@ colorschemes
 Usage
 -----
 
-There are two ways of doing things.
-
-### Simple method
-
-You can simply clone this repository into your ranger config directory, usually
-`~/.config/ranger`, to get access to all the colorschemes.
-
-```sh
-cd ~/.config/ranger
-git clone https://github.com/ranger/colorschemes.git
-```
-
-> ***NOTE***: This method may change or become deprecated in the future due to
-> more complex colorschemes being added that require files in multiple locations.
-
-### More customizable method
-
 First, clone a repo:
 
 ```sh
