@@ -3,14 +3,28 @@ import ranger.gui.color as style
 import ranger.gui.context
 import ranger.gui.widgets.browsercolumn
 from os import getenv
+from subprocess import check_output, CalledProcessError
 
-ls_colors = getenv('LS_COLORS').split(':')
-if ls_colors is None:
+
+def get_default_lscolors():
+    """Returns the default value for LS_COLORS
+    as parsed from the `dircolors` command
+    """
+    ls_colors = check_output('dircolors')
+    ls_colors = ls_colors.splitlines()[0].decode('UTF-8').split("'")[1]
+    return ls_colors
+
+
+try:
+    ls_colors = getenv('LS_COLORS', get_default_lscolors()).split(':')
+except (CalledProcessError, FileNotFoundError):
     ls_colors = []
+
+# Gets all the keys corresponding to extensions
 ls_colors_keys = [k.split('=')[0] for k in ls_colors if k != '']
 ls_colors_keys = [k.split('*.')[1] for k in ls_colors_keys if '*.' in k]
 
-# Add your key names
+# Add the key names to ranger context keys
 for key in ls_colors_keys:
     ranger.gui.context.CONTEXT_KEYS.append(key)
     setattr(ranger.gui.context.Context, key, False)
@@ -31,8 +45,9 @@ ranger.gui.widgets.browsercolumn.hook_before_drawing = new_hook_before_drawing
 
 class base(ColorScheme):
     progress_bar_color = 1
-    ls_colors = getenv('LS_COLORS').split(':')
-    if ls_colors is None:
+    try:
+        ls_colors = getenv('LS_COLORS', get_default_lscolors()).split(':')
+    except (CalledProcessError, FileNotFoundError):
         ls_colors = []
 
     ls_colors_keys = [k.split('=') for k in ls_colors if k != '']
