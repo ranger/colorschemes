@@ -45,10 +45,6 @@ ranger.gui.widgets.browsercolumn.hook_before_drawing = new_hook_before_drawing
 
 class base(ColorScheme):
     progress_bar_color = 1
-    try:
-        ls_colors = getenv('LS_COLORS', get_default_lscolors()).split(':')
-    except (CalledProcessError, FileNotFoundError):
-        ls_colors = []
 
     ls_colors_keys = [k.split('=') for k in ls_colors if k != '']
     tup_ls_colors = []
