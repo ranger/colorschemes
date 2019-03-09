@@ -62,7 +62,6 @@ class ls_colors(ColorScheme):
                 self.tup_ls_colors += [('directory', key[1])]
 
         self.progress_bar_color = 1
-        print(self.ls_colors_keys)
 
     def new_hook_before_drawing(self, fsobject, color_list):
         for key in self.ls_colors_extensions:
