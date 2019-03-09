@@ -129,13 +129,6 @@ class ls_colors(ColorScheme):
     def use(self, context):
         fg, bg, attr = style.default_colors
 
-        if context.reset:
-            return style.default_colors
-
-        elif context.in_browser:
-            if context.selected:
-                attr = style.reverse
-
         # Values found from
         # http://www.bigsoft.co.uk/blog/2008/04/11/configuring-ls_colors
         for key, t_attributes in self.tup_ls_colors:
@@ -179,5 +172,35 @@ class ls_colors(ColorScheme):
                     bg = colour256_bg
                 elif colour16_bg is not None:
                     bg = colour16_bg
+
+        if context.reset:
+            return style.default_colors
+        elif context.in_browser:
+            if context.selected:
+                attr = style.reverse
+            if context.tag_marker and not context.selected:
+                attr |= style.bold
+                if fg in (style.red, style.magenta):
+                    fg = style.white
+                else:
+                    fg = style.red
+                fg += style.BRIGHT
+            if not context.selected and (context.cut or context.copied):
+                attr |= style.bold
+                fg = style.black
+                fg += style.BRIGHT
+                # If the terminal doesn't support bright colors, use
+                # dim white instead of black.
+                if style.BRIGHT == 0:
+                    attr |= style.dim
+                    fg = style.white
+            if context.main_column:
+                # Doubling up with BRIGHT here causes issues because
+                # it's additive not idempotent.
+                if context.selected:
+                    attr |= style.bold
+                if context.marked:
+                    attr |= style.bold
+                    fg = style.yellow
 
         return fg, bg, attr
