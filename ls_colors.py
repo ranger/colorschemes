@@ -80,11 +80,9 @@ class ls_colors(ColorScheme):
 
     def get_attr_from_lscolors(self, attribute_list):
         return_attr = 0
-        to_del = []
+        to_delete = []
 
         for i, attr in enumerate(attribute_list):
-            attr = int(attr)
-            to_del.append(i)
             if attr == 1:
                 return_attr |= style.bold
             elif attr == 4:
@@ -95,36 +93,60 @@ class ls_colors(ColorScheme):
                 return_attr |= style.reverse
             elif attr == 8:
                 return_attr |= style.invisible
-            else:
-                to_del.pop(-1)
+            to_delete.append(i)
 
-            return return_attr
+        # remove style attrattributes  from the array
+        attribute_list[:] = [val for i, val in enumerate(attribute_list) if i in to_delete]
 
-    def get_256_background_color_if_exists(self, attribute_list):
-        colour256 = False
-        for i, key in enumerate(attribute_list):
-            if key == '48' and attribute_list[i + 1] == '5':
-                colour256 = True
-                break
-        if colour256 and len(attribute_list) >= i + 3:
-            return_colour = int(attribute_list[i + 2])
-            del attribute_list[i:i + 3]
-            return return_colour
-        else:
-            return None
+        return return_attr
 
-    def get_256_foreground_color_if_exists(self, attribute_list):
-        colour256 = False
-        for i, key in enumerate(attribute_list):
-            if key == '38' and attribute_list[i + 1] == '5':
-                colour256 = True
-                break
-        if colour256 and len(attribute_list) >= i + 3:
-            return_colour = int(attribute_list[i + 2])
-            del attribute_list[i:i + 3]
-            return return_colour
-        else:
-            return None
+    # https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+    def get_colour_from_attributes(self, attribute_list):
+        """Get the colour from the different attributes passed
+        """
+        fg_colour = None
+        bg_colour = None
+        looking_at_256_ttl = 0
+        for i, current_attr in enumerate(attribute_list):
+            #################
+            #  256 colours  #
+            #################
+
+            if looking_at_256_ttl > 0:
+                looking_at_256_ttl -= 1
+                continue
+            # If colour256, we need to get to the third field (after 48 and 5)
+            # to get the colour
+            try:
+                if current_attr == 48 and attribute_list[i + 1] == 5:
+                    bg_colour = attribute_list[i + 2]
+                    looking_at_256_ttl = 2
+                elif current_attr == 38 and attribute_list[i + 1] == 5:
+                    fg_colour = attribute_list[i + 2]
+                    looking_at_256_ttl = 2
+            except IndexError:
+                print('Bad attribute value for LS_COLORS: {}'.format(attribute_list))
+                exit(1)
+
+            ######################
+            #  Standard colours  #
+            ######################
+
+            # Standard colours
+            if (current_attr >= 30 and current_attr <= 37):
+                fg_colour = current_attr - 30
+            # Bright
+            elif (current_attr >= 90 and current_attr <= 97):
+                fg_colour = current_attr - 82
+
+            # Standard colours
+            elif (current_attr >= 40 and current_attr <= 47):
+                bg_colour = current_attr - 40
+            # Bright
+            elif (current_attr >= 100 and current_attr <= 107):
+                bg_colour = current_attr - 92
+
+        return fg_colour, bg_colour
 
     def use(self, context):
         fg, bg, attr = style.default_colors
@@ -136,42 +158,21 @@ class ls_colors(ColorScheme):
                 if key == 'executable' and (context.directory or context.link):
                     continue
                 t_attributes = t_attributes.split(';')
-                colour256_fg = self.get_256_foreground_color_if_exists(
-                    t_attributes)
-                colour256_bg = self.get_256_background_color_if_exists(
-                    t_attributes)
+                try:
+                    t_attributes[:] = [int(attrib) for attrib in t_attributes]
+                except ValueError:
+                    print("Bad attribute value for LS_COLORS: {}".format(attr))
+                    exit(1)
+
                 new_attr = self.get_attr_from_lscolors(t_attributes)
                 if new_attr is not None:
                     attr |= new_attr
+                fg_colour, bg_colour = self.get_colour_from_attributes(t_attributes)
 
-                # Now only the non-256 colours should be left.
-                # Let's fetch them
-                colour16_fg, colour16_bg = None, None
-                for colour_val in t_attributes:
-                    colour_val = int(colour_val)
-                    # Basic colours for foreground
-                    if (colour_val >= 30 and colour_val <= 37):
-                        colour16_fg = colour_val - 30
-                    # eight more basic colours
-                    elif (colour_val >= 90 and colour_val <= 97):
-                        colour16_fg = colour_val - 82
-
-                    # Basic colours for background
-                    elif (colour_val >= 40 and colour_val <= 47):
-                        colour16_bg = colour_val
-                    # eight more basic colours
-                    elif (colour_val >= 90 and colour_val <= 97):
-                        colour16_bg = colour_val
-
-                if colour256_fg is not None:
-                    fg = colour256_fg
-                elif colour16_fg is not None:
-                    fg = colour16_fg
-
-                if colour256_bg is not None:
-                    bg = colour256_bg
-                elif colour16_bg is not None:
-                    bg = colour16_bg
+                if fg_colour is not None:
+                    fg = fg_colour
+                if bg_colour is not None:
+                    bg = bg_colour
 
         if context.reset:
             return style.default_colors
