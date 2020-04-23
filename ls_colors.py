@@ -38,7 +38,7 @@ class ls_colors(ColorScheme):
 
         # Not considering file extensions
         # The order of these two block matters, as extensions colouring should
-        # take precedence over file type
+        # take precedence over the 'file' type
         for key in [k for k in self.ls_colors_keys if '.*' not in k]:
             if key[0] == 'fi':
                 self.tup_ls_colors += [('file', key[1])]
@@ -47,6 +47,9 @@ class ls_colors(ColorScheme):
         self.tup_ls_colors += [('.' + k[0].split('*.')[1], k[1])
                                for k in self.ls_colors_keys if '*.' in k[0]]
 
+        # This is added last because their color should take precedence over
+        # what's been set before for a 'file' that would have the same 
+        # extension
         for key in [k for k in self.ls_colors_keys if '.*' not in k]:
             if key[0] == 'ex':
                 self.tup_ls_colors += [('executable', key[1])]
@@ -100,6 +103,16 @@ class ls_colors(ColorScheme):
 
         return return_attr
 
+    def make_colour_bright(self, colour_value):
+        """Only applicable to not already bright 8 bit colours.
+        256 colour will be returned "as-is"
+        """
+
+        if colour_value < 8 and colour_value >= 0:
+            colour_value += style.BRIGHT
+        return colour_value
+
+    # Values from
     # https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
     def get_colour_from_attributes(self, attribute_list):
         """Get the colour from the different attributes passed
@@ -151,8 +164,6 @@ class ls_colors(ColorScheme):
     def use(self, context):
         fg, bg, attr = style.default_colors
 
-        # Values found from
-        # http://www.bigsoft.co.uk/blog/2008/04/11/configuring-ls_colors
         for key, t_attributes in self.tup_ls_colors:
             if getattr(context, key):
                 if key == 'executable' and (context.directory or context.link):
@@ -178,18 +189,18 @@ class ls_colors(ColorScheme):
             return style.default_colors
         elif context.in_browser:
             if context.selected:
-                attr = style.reverse
+                attr |= style.reverse
             if context.tag_marker and not context.selected:
                 attr |= style.bold
                 if fg in (style.red, style.magenta):
                     fg = style.white
                 else:
                     fg = style.red
-                fg += style.BRIGHT
+                fg = self.make_colour_bright(fg)
             if not context.selected and (context.cut or context.copied):
                 attr |= style.bold
                 fg = style.black
-                fg += style.BRIGHT
+                fg = self.make_colour_bright(fg)
                 # If the terminal doesn't support bright colors, use
                 # dim white instead of black.
                 if style.BRIGHT == 0:
