@@ -64,6 +64,16 @@ class ls_colors(ColorScheme):
             elif key[0] == 'di':
                 self.tup_ls_colors += [('directory', key[1])]
 
+        # Those special context shouldn't get attributes destined to
+        # files, based on extension
+        self.__special_context = [
+            "directory",
+            "fifo",
+            "link",
+            "device",
+            "socket"
+        ]
+
         self.progress_bar_color = 1
 
     def new_hook_before_drawing(self, fsobject, color_list):
@@ -161,13 +171,25 @@ class ls_colors(ColorScheme):
 
         return fg_colour, bg_colour
 
+    def is_special_file_context(self, context):
+        """Return True if we are in a special file context
+        """
+
+        for special_key in self.__special_context:
+            if getattr(context, special_key):
+                return True
+        return False
+
     def use(self, context):
         fg, bg, attr = style.default_colors
 
         for key, t_attributes in self.tup_ls_colors:
             if getattr(context, key):
-                if key == 'executable' and (context.directory or context.link):
+                # This means we're most likely applying extension colouring to 
+                # a special file (e.g. directory, link, etc.)
+                if self.is_special_file_context(context) and key not in self.__special_context:
                     continue
+
                 t_attributes = t_attributes.split(';')
                 try:
                     t_attributes[:] = [int(attrib) for attrib in t_attributes]
