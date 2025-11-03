@@ -1,6 +1,8 @@
 colorschemes
 ============
 
+⚠️ Moved to https://codeberg.org/ranger/colorschemes ⚠️
+
 Usage
 -----
 
